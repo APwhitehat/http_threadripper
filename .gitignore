@@ -1,0 +1,7 @@
+client
+server
+ompserver
+*.dat
+makefile
+*~
+.DS_Store

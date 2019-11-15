@@ -12,17 +12,19 @@ void HttpServer::accept_callback(struct ev_loop * loop, struct ev_io * watcher, 
     }
 
     // Accept client request
-    int clientSD = ::accept(watcher -> fd, (sockaddr*) &clientAddr, &client_len);
+    int clientFD = ::accept(watcher -> fd, (sockaddr*) &clientAddr, &client_len);
 
-    if (clientSD < 0) {
+    if (clientFD < 0) {
         perror("accept error");
         return;
     }
 
+    _set_non_block(clientFD);
+
     printf("Successfully connected with client.\n");
 
     // Initialize and start watcher to read client requests
-    ev_io_init(w_client, read_callback, clientSD, EV_READ);
+    ev_io_init(w_client, read_callback, clientFD, EV_READ);
     ev_io_start(loop, w_client);
 }
 
@@ -39,7 +41,7 @@ void HttpServer::read_callback(struct ev_loop * loop, struct ev_io * watcher, in
     // Receive message from client socket
     read = recv(watcher->fd, buffer, BUFFER_SIZE, 0);
 
-    if (read < 0) {
+    if (!_is_valid_return(read)) {
         perror("read error");
         return;
     }
@@ -47,18 +49,21 @@ void HttpServer::read_callback(struct ev_loop * loop, struct ev_io * watcher, in
     if (read == 0) {
         // Stop and free watchet if client socket is closing
         ev_io_stop(loop, watcher);
+        ::close(watcher->fd);
         free(watcher);
-        printf("peer might closing");
+        printf("peer might closing\n");
         return;
     } else {
         printf("message:%s\n", buffer);
     }
 
     // Send message bach to the client
-    send(watcher->fd, buffer, read, 0);
+    if(!_is_valid_return(send(watcher->fd, buffer, read, 0))) {
+        perror("send error");
+    }
+
     bzero(buffer, read);
 }
-
 
 
 bool HttpServer::bind_and_listen(const int port) {
@@ -89,6 +94,8 @@ bool HttpServer::trigger_stop() {
 }
 
 
+atomic_ushort HttpServer::thread_index = 0;
+
 HttpServer::HttpServer(const int port):sockFD(-1), trigger_stop_flag(false) {
     memset(&address, 0, sizeof(address));
 
@@ -105,7 +112,22 @@ HttpServer::HttpServer(const int port):sockFD(-1), trigger_stop_flag(false) {
             close();
         }
 
-        const int flag = fcntl(sockFD, F_GETFL, 0);
-        fcntl(sockFD, F_SETFL, flag | O_NONBLOCK);
+        _set_non_block(sockFD);
     }
 }
+
+
+bool HttpServer::run() {
+    struct ev_loop *loop = EV_DEFAULT;
+    ev_io accept_watcher;
+
+    ev_io_init (&accept_watcher, accept_callback, sockFD, EV_READ);
+    ev_io_start (loop, &accept_watcher);
+
+    // now wait for events to arrive
+    ev_run (loop, 0);
+
+    // should not be reachable
+    return false;
+}
+

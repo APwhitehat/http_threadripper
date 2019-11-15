@@ -1,7 +1,6 @@
 client
 server
-ompserver
+a.out
 *.dat
-makefile
 *~
 .DS_Store

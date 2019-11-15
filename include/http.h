@@ -6,14 +6,16 @@
 #include <ev.h>
 
 #include <sys/types.h>
-#include <netdb.h>               // defines the hostent structure
-#include <unistd.h>              // for ::close() , usleep()
-#include <cstring>
-#include <arpa/inet.h>           // defines the in_addr
-#include <fcntl.h>               // to set file descriptor flags , O_NONBLOCK
+#include <netdb.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
 
-#include <stdatomic.h>
+// #include <atomic>
 #include <stdlib.h>
+
+
+#include "http_parser.cpp"
 
 #ifdef _OPENMP
 #include <omp.h>                 // multiThreading
@@ -25,10 +27,12 @@ private:
     const static int numberOfThreads = 4;
     const static int maxQueueSize = 40;
     const static uint BUFFER_SIZE = 4 * 1024u; // 4 Bytes
+    static FileServer local;
+
     sockaddr_in address;
     int sockFD;
     bool trigger_stop_flag;
-    static atomic_ushort thread_index; // the index to queue the watchers
+    // static std::atomic_ushort thread_index; // the index to queue the watchers
 
 
 

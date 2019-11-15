@@ -1,9 +1,9 @@
-#include "http.cpp"
+#include "include/http.cpp"
 
 
 int main(int argc, char *argv[]){
     if (argc < 2) {
-        printf(" No port provided\n");
+        printf("No port provided or path not provided\n");
         return 1;
     }
 

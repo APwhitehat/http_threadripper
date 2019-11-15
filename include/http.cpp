@@ -1,5 +1,5 @@
 #include "http.h"
-
+#include "http_parser.cpp"
 
 void HttpServer::accept_callback(struct ev_loop * loop, struct ev_io * watcher, int revents) {
     struct sockaddr_in clientAddr;
@@ -46,19 +46,19 @@ void HttpServer::read_callback(struct ev_loop * loop, struct ev_io * watcher, in
         return;
     }
 
-    if (read == 0) {
+    if (read == 0 or check_connection_close(buffer)) {
         // Stop and free watchet if client socket is closing
         ev_io_stop(loop, watcher);
         ::close(watcher->fd);
         free(watcher);
         printf("peer might closing\n");
         return;
-    } else {
-        printf("message:%s\n", buffer);
     }
 
+    char *buf = local.get(buffer);
+
     // Send message bach to the client
-    if(!_is_valid_return(send(watcher->fd, buffer, read, 0))) {
+    if(!_is_valid_return(send(watcher->fd, buf, 74, 0))) {
         perror("send error");
     }
 
@@ -93,8 +93,7 @@ bool HttpServer::trigger_stop() {
     return true;
 }
 
-
-atomic_ushort HttpServer::thread_index = 0;
+// FileServer HttpServer::local();
 
 HttpServer::HttpServer(const int port):sockFD(-1), trigger_stop_flag(false) {
     memset(&address, 0, sizeof(address));

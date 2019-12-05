@@ -1,3 +1,10 @@
+# HTTP Threadripper
+
+HTTP 1.1 server which shows off high concurrency capabilities of C++.
+
+Implemented using no third-party http libraries.
+Uses [libev](https://github.com/enki/libev) and unix sockets.
+
 ### To compile
 
 ```bash

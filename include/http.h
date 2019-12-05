@@ -17,10 +17,6 @@
 
 #include "http_parser.cpp"
 
-#ifdef _OPENMP
-#include <omp.h>                 // multiThreading
-#endif
-
 
 class HttpServer {
 private:
